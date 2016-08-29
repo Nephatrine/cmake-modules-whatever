@@ -1,0 +1,74 @@
+#
+# Set Vendor Name
+# Should be set by setting WHATEVER_VENDOR.
+#
+
+if(NOT CPACK_PACKAGE_VENDOR)
+	if(WHATEVER_VENDOR)
+		set(CPACK_PACKAGE_VENDOR "${WHATEVER_VENDOR}")
+	else()
+		set(CPACK_PACKAGE_VENDOR "Unknown")
+	endif()
+endif()
+
+#
+# Set Contact Email
+# Should be set by setting WHATEVER_CONTACT.
+#
+
+if(NOT CPACK_PACKAGE_CONTACT)
+	if(WHATEVER_CONTACT)
+		set(CPACK_PACKAGE_CONTACT "${WHATEVER_CONTACT}")
+	endif()
+endif()
+
+#
+# Set Description
+# Should be set by setting WHATEVER_DESCRIPTION.
+#
+
+if(NOT CPACK_PACKAGE_DESCRIPTION_SUMMARY)
+	if(WHATEVER_DESCRIPTION)
+		set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${WHATEVER_DESCRIPTION}")
+	else()
+		set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Whatever...")
+	endif()
+endif()
+
+#
+# Set Package Types
+#
+
+cmake_dependent_option(WHATEVER_PACKAGE_NSIS "Create NSIS Installer (.EXE)" ON WIN32 OFF)
+cmake_dependent_option(WHATEVER_PACKAGE_DEB "Create Debian Package (.DEB)" ON UNIX OFF)
+cmake_dependent_option(WHATEVER_PACKAGE_RPM "Create Red Hat Package (.RPM)" ON UNIX OFF)
+
+if(WIN32)
+	set(CPACK_GENERATOR "ZIP")
+else()
+	set(CPACK_GENERATOR "TGZ")
+endif()
+
+if(WHATEVER_PACKAGE_NSIS)
+	list(APPEND CPACK_GENERATOR "NSIS")
+endif()
+if(WHATEVER_PACKAGE_DEB)
+	list(APPEND CPACK_GENERATOR "DEB")
+endif()
+if(WHATEVER_PACKAGE_RPM)
+	list(APPEND CPACK_GENERATOR "RPM")
+endif()
+
+#
+# Basic Stuff
+#
+
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "WhatEver")
+set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${PROJECT_SOURCE_DIR}/README.md")
+set(CPACK_RESOURCE_FILE_LICENSE "${PROJECT_SOURCE_DIR}/LICENSE.md")
+set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
+include(CPack)
+
