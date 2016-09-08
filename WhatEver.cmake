@@ -6,6 +6,9 @@ include(GenerateExportHeader)
 include(GNUInstallDirs)
 
 find_program(IWYU_PROGRAM NAMES include-what-you-use iwyu)
+find_program(RAGEL_PROGRAM NAMES ragel)
+mark_as_advanced(IWYU_PROGRAM)
+mark_as_advanced(RAGEL_PROGRAM)
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 	set(WHATEVER_DEBUG ON)
@@ -182,9 +185,23 @@ function(we_generate_configs dir_in dir_out)
 	foreach(WHATEVER_CONFIG_FILE ${WHATEVER_CONFIG_FILES})
 		get_filename_component(WHATEVER_OUTFILE "${WHATEVER_CONFIG_FILE}" NAME_WE)
 		configure_file("${WHATEVER_CONFIG_FILE}" "${dir_out}/${WHATEVER_OUTFILE}.h")
-		set(WHATEVER_GENERATED ${WHATEVER_GENERATED} "${dir_out}/${WHATEVER_OUTFILE}.h"
-			PARENT_SCOPE)
+		set(WHATEVER_GENERATED_INT ${WHATEVER_GENERATED_INT} "${dir_out}/${WHATEVER_OUTFILE}.h")
 	endforeach()
+
+	file(GLOB WHATEVER_CONFIG_FILES "${dir_in}/*.rl")
+	foreach(WHATEVER_CONFIG_FILE ${WHATEVER_CONFIG_FILES})
+		get_filename_component(WHATEVER_OUTFILE "${WHATEVER_CONFIG_FILE}" NAME_WE)
+		add_custom_command(OUTPUT "${dir_out}/${WHATEVER_OUTFILE}.h"
+			COMMAND ${RAGEL_PROGRAM}
+			ARGS -e -F1 -o"${dir_out}/${WHATEVER_OUTFILE}.h" ${WHATEVER_CONFIG_FILE}
+			DEPENDS ${WHATEVER_CONFIG_FILE}
+			COMMENT "[RAGEL] Processing ${WHATEVER_CONFIG_FILE}"
+			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+		set(WHATEVER_GENERATED_INT ${WHATEVER_GENERATED_INT} "${dir_out}/${WHATEVER_OUTFILE}.h")
+	endforeach()
+
+	set(WHATEVER_GENERATED ${WHATEVER_GENERATED} ${WHATEVER_GENERATED_INT}
+		PARENT_SCOPE)
 endfunction()
 
 function(we_build_library WHATEVER_TARGET libname)
