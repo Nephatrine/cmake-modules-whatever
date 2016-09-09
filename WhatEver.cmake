@@ -137,7 +137,7 @@ include(InstallRequiredSystemLibraries)
 
 install(EXPORT ${PROJECT_NAME}
 	FILE "${PROJECT_NAME}Config.cmake"
-	DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake"
+	DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
 	COMPONENT prj)
 
 export(PACKAGE ${PROJECT_NAME})
