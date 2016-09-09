@@ -11,27 +11,21 @@ find_program(RAGEL_PROGRAM NAMES ragel)
 mark_as_advanced(IWYU_PROGRAM)
 mark_as_advanced(RAGEL_PROGRAM)
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-	set(WHATEVER_DEBUG ON)
-else()
-	set(WHATEVER_DEBUG OFF)
-endif()
-	
-cmake_dependent_option(BUILD_PACKAGE_NSIS "Create NSIS Installer (.EXE)" ON WIN32 OFF)
-cmake_dependent_option(BUILD_PACKAGE_WIX "Create WiX Installer (.MSI)" ON WIN32 OFF)
-cmake_dependent_option(BUILD_PACKAGE_DEB "Create Debian Package (.DEB)" ON UNIX OFF)
-cmake_dependent_option(BUILD_PACKAGE_RPM "Create Red Hat Package (.RPM)" ON UNIX OFF)
-cmake_dependent_option(USE_MSVC_RUNTIME "Use MSVC DLL Runtime" ON MSVC OFF)
-cmake_dependent_option(USE_TOOL_IWYU "Use IWYU Static Analysis" ${WHATEVER_DEBUG} IWYU_PROGRAM OFF)
+cmake_dependent_option(BUILD_PACKAGE_NSIS "Create NSIS Installer (.EXE)" OFF WIN32 OFF)
+cmake_dependent_option(BUILD_PACKAGE_WIX "Create WiX Installer (.MSI)" OFF WIN32 OFF)
+cmake_dependent_option(BUILD_PACKAGE_DEB "Create Debian Package (.DEB)" OFF UNIX OFF)
+cmake_dependent_option(BUILD_PACKAGE_RPM "Create Red Hat Package (.RPM)" OFF UNIX OFF)
+cmake_dependent_option(MSVC_USE_RUNTIME "Use MSVC DLL Runtime" ON MSVC OFF)
+cmake_dependent_option(USE_TOOL_IWYU "Use IWYU Static Analysis" OFF IWYU_PROGRAM OFF)
 
 set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "WhatEver")
-set(CPACK_PACKAGE_VERSION "${${PROJECT_NAME}_VERSION}")
-set(CPACK_PACKAGE_VERSION_MAJOR "${${PROJECT_NAME}_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${${PROJECT_NAME}_VERSION_MINOR}")
-set(CPACK_PACKAGE_VERSION_PATCH "${${PROJECT_NAME}_VERSION_PATCH}")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 
 if(NOT WHATEVER_SET_LANGUAGE)
 	get_property(WHATEVER_SET_LANGUAGE GLOBAL PROPERTY ENABLED_LANGUAGES)
@@ -63,7 +57,7 @@ if(MSVC)
 			CMAKE_C_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_MINSIZEREL
 			CMAKE_C_FLAGS_RELWITHDEBINFO CMAKE_CXX_FLAGS_RELWITHDEBINFO)
 		string(REGEX REPLACE "/W3" "/W4" ${WHATEVER_FLAG_VARIABLE} "${${WHATEVER_FLAG_VARIABLE}}")
-		if(NOT USE_MSVC_RUNTIME)
+		if(NOT MSVC_USE_RUNTIME)
 			string(REGEX REPLACE "/MDd" "/MTd" ${WHATEVER_FLAG_VARIABLE} "${${WHATEVER_FLAG_VARIABLE}}")
 			string(REGEX REPLACE "/MD" "/MT" ${WHATEVER_FLAG_VARIABLE} "${${WHATEVER_FLAG_VARIABLE}}")
 		endif()
@@ -141,16 +135,20 @@ set(CPACK_COMPONENT_SYS_INSTALL_TYPES Minimal Standard Full)
 set(CMAKE_INSTALL_SYSTEM_RUNTIME_COMPONENT sys)
 include(InstallRequiredSystemLibraries)
 
-install(EXPORT ${PROJECT_NAME}
-	DESTINATION "${CMAKE_INSTALL_LIBDIR}/WhatEver"
+install(EXPORT "${PROJECT_NAME}Config"
+	DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake"
 	COMPONENT prj)
+
+export(PACKAGE ${PROJECT_NAME})
 
 function(we_check_function header tryit)
 	string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" WHATEVER_VARIABLE ${header})
 	string(TOUPPER "HAVE_${WHATEVER_VARIABLE}" WHATEVER_VARIABLE)
+	
 	if(NOT DEFINED ${WHATEVER_VARIABLE})
 		check_include_file("${header}" ${WHATEVER_VARIABLE})
 	endif()
+	
 	if(${WHATEVER_VARIABLE})
 		string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" WHATEVER_VARIABLE ${tryit})
 		string(TOUPPER "HAVE_${WHATEVER_VARIABLE}" WHATEVER_VARIABLE)
@@ -169,11 +167,13 @@ endfunction()
 
 function(we_request_compile_flag cflag)
 	string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" WHATEVER_VARIABLE "HAS_CFLAG${cflag}")
+	
 	if("CXX" IN_LIST WHATEVER_SET_LANGUAGE)
 		check_cxx_compiler_flag(${cflag} ${WHATEVER_VARIABLE})
 	else()
 		check_c_compiler_flag(${cflag} ${WHATEVER_VARIABLE})
 	endif()
+
 	if(${WHATEVER_VARIABLE})
 		set(WHATEVER_CFLAGS ${WHATEVER_CFLAGS} ${cflag}
 			PARENT_SCOPE)
@@ -184,21 +184,25 @@ function(we_request_link_flag ldflag)
 	set(WHATEVER_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
 	string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" WHATEVER_VARIABLE "HAS_LFLAG${ldflag}")
 	set(CMAKE_REQUIRED_FLAGS "${ldflag}")
+	
 	if("CXX" IN_LIST WHATEVER_SET_LANGUAGE)
 		check_cxx_compiler_flag("" ${WHATEVER_VARIABLE})
 	else()
 		check_c_compiler_flag("" ${WHATEVER_VARIABLE})
 	endif()
+	
 	if(${WHATEVER_VARIABLE})
 		set(WHATEVER_LDFLAGS "${WHATEVER_LDFLAGS} ${ldflag}"
 			PARENT_SCOPE)
 	endif()
+	
 	set(CMAKE_REQUIRED_FLAGS ${WHATEVER_REQUIRED_FLAGS})
 endfunction()
 
 function(we_generate_configs dir_in dir_out)
 	file(MAKE_DIRECTORY ${dir_out})
 	file(GLOB WHATEVER_CONFIG_FILES "${dir_in}/*.in")
+	
 	foreach(WHATEVER_CONFIG_FILE ${WHATEVER_CONFIG_FILES})
 		get_filename_component(WHATEVER_OUTFILE "${WHATEVER_CONFIG_FILE}" NAME_WE)
 		configure_file("${WHATEVER_CONFIG_FILE}" "${dir_out}/${WHATEVER_OUTFILE}.h")
@@ -238,12 +242,13 @@ function(we_build_library WHATEVER_TARGET libname)
 
 	if(USE_TOOL_IWYU)
 		set_target_properties(${WHATEVER_TARGET} PROPERTIES
-			C_INCLUDE_WHAT_YOU_USE ${WHATEVER_TOOL_IWYU}
-			CXX_INCLUDE_WHAT_YOU_USE ${WHATEVER_TOOL_IWYU})
+			C_INCLUDE_WHAT_YOU_USE ${PROGRAM_IWYU}
+			CXX_INCLUDE_WHAT_YOU_USE ${PROGRAM_IWYU})
 	endif()
 
 	export(TARGETS ${WHATEVER_TARGET}
-		FILE "${WHATEVER_TARGET}-export.cmake")
+		NAMESPACE ${PROJECT_NAME}
+		APPEND FILE "${PROJECT_NAME}Config.cmake")
 
 	generate_export_header(${WHATEVER_TARGET}
 		BASE_NAME ${libname}
