@@ -136,12 +136,19 @@ set(CPACK_COMPONENT_SYS_INSTALL_TYPES Minimal Standard Full)
 set(CMAKE_INSTALL_SYSTEM_RUNTIME_COMPONENT sys)
 include(InstallRequiredSystemLibraries)
 
-install(EXPORT ${PROJECT_NAME}
-	FILE "${PROJECT_NAME}Config.cmake"
-	DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
-	COMPONENT prj)
+function(we_generate_exports targets)
+	install(EXPORT ${PROJECT_NAME}
+		FILE "${PROJECT_NAME}Config.cmake"
+		DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
+		COMPONENT prj)
 
-export(PACKAGE ${PROJECT_NAME})
+	foreach(WHATEVER_TARGET ${targets})
+	    export(TARGETS ${WHATEVER_TARGET}
+			APPEND FILE "${PROJECT_NAME}Config.cmake")
+	endforeach()
+
+	export(PACKAGE ${PROJECT_NAME})
+endfunction()
 
 function(we_check_function header tryit)
 	string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" WHATEVER_VARIABLE ${header})
@@ -249,9 +256,6 @@ function(we_build_library WHATEVER_TARGET libname)
 			C_INCLUDE_WHAT_YOU_USE ${IWYU_PROGRAM}
 			CXX_INCLUDE_WHAT_YOU_USE ${IWYU_PROGRAM})
 	endif()
-
-	export(TARGETS ${WHATEVER_TARGET}
-		APPEND FILE "${PROJECT_NAME}Config.cmake")
 
 	generate_export_header(${WHATEVER_TARGET}
 		BASE_NAME ${libname}
