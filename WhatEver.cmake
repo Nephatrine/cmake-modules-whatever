@@ -236,7 +236,7 @@ function(we_generate_configs dir_in dir_out)
 		PARENT_SCOPE)
 endfunction()
 
-function(we_build_library WHATEVER_TARGET libname)
+function(we_build_default WHATEVER_TARGET)
 	set_target_properties(${WHATEVER_TARGET} PROPERTIES
 		C_VISIBILITY_PRESET hidden
 		CXX_VISIBILITY_PRESET hidden
@@ -256,10 +256,6 @@ function(we_build_library WHATEVER_TARGET libname)
 			C_INCLUDE_WHAT_YOU_USE ${IWYU_PROGRAM}
 			CXX_INCLUDE_WHAT_YOU_USE ${IWYU_PROGRAM})
 	endif()
-
-	generate_export_header(${WHATEVER_TARGET}
-		BASE_NAME ${libname}
-		EXPORT_FILE_NAME "include/${libname}_api.h")
 endfunction()
 
 function(we_build_library_static target libname soversion sources)
@@ -275,7 +271,11 @@ function(we_build_library_static target libname soversion sources)
 		PARENT_SCOPE)
 
 	add_library(${WHATEVER_TARGET} STATIC ${sources})
-	
+
+	generate_export_header(${WHATEVER_TARGET}
+		BASE_NAME ${libname}
+		EXPORT_FILE_NAME "include/${libname}_api.h")
+
 	if(${soversion} LESS 0)
 		if(MSVC)
 			set_target_properties(${WHATEVER_TARGET} PROPERTIES
@@ -297,7 +297,7 @@ function(we_build_library_static target libname soversion sources)
 	string(TOUPPER "${libname}_STATIC_DEFINE" WHATEVER_DEFINE_STATIC)
 	target_compile_definitions(${WHATEVER_TARGET} PUBLIC ${WHATEVER_DEFINE_STATIC})
 
-	we_build_library(${WHATEVER_TARGET} ${libname})
+	we_build_default(${WHATEVER_TARGET})
 
 	install(TARGETS ${WHATEVER_TARGET}
 		EXPORT ${PROJECT_NAME}
@@ -321,6 +321,10 @@ function(we_build_library_shared target libname soversion sources)
 
 	add_library(${WHATEVER_TARGET} SHARED ${sources})
 
+	generate_export_header(${WHATEVER_TARGET}
+		BASE_NAME ${libname}
+		EXPORT_FILE_NAME "include/${libname}_api.h")
+
 	if(${soversion} LESS 0)
 		set_target_properties(${WHATEVER_TARGET} PROPERTIES
 			OUTPUT_NAME ${libname})
@@ -337,11 +341,34 @@ function(we_build_library_shared target libname soversion sources)
 
 	target_compile_definitions(${WHATEVER_TARGET} PRIVATE "${WHATEVER_TARGET}_EXPORTS")
 
-	we_build_library(${WHATEVER_TARGET} ${libname})
+	we_build_default(${WHATEVER_TARGET})
 
 	install(TARGETS ${WHATEVER_TARGET}
 		EXPORT ${PROJECT_NAME}
 		COMPONENT dll
+		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endfunction()
+
+function(we_build_program target exename sources)
+	set(WHATEVER_TARGET "${exename}-bin")
+	set(${target} ${WHATEVER_TARGET}
+		PARENT_SCOPE)
+
+	set(WHATEVER_TARGETS_PROGRAM ${WHATEVER_TARGETS_PROGRAM} ${WHATEVER_TARGET}
+		PARENT_SCOPE)
+	set(WHATEVER_TARGETS ${WHATEVER_TARGETS} ${WHATEVER_TARGET}
+		PARENT_SCOPE)
+
+	add_executable(${WHATEVER_TARGET} ${sources})
+	set_target_properties(${WHATEVER_TARGET} PROPERTIES
+		OUTPUT_NAME "${exename}")
+
+	we_build_default(${WHATEVER_TARGET})
+
+	install(TARGETS ${WHATEVER_TARGET}
+		COMPONENT bin
 		RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 		LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 		ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
