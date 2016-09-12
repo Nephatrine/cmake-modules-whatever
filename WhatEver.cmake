@@ -6,6 +6,7 @@ include(CMakeDependentOption)
 include(GenerateExportHeader)
 include(GNUInstallDirs)
 
+find_package(PythonInterp 3)
 find_program(IWYU_PROGRAM NAMES include-what-you-use iwyu)
 find_program(RAGEL_PROGRAM NAMES ragel)
 mark_as_advanced(IWYU_PROGRAM)
@@ -259,11 +260,29 @@ function(we_generate_configs dir_in dir_out)
 			ARGS -e -F1 -o"${dir_out}/${WHATEVER_OUTFILE}" ${WHATEVER_CONFIG_FILE}
 			DEPENDS ${WHATEVER_CONFIG_FILE}
 			COMMENT "[RAGEL] Processing ${WHATEVER_CONFIG_FILE}"
-			WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 		set(WHATEVER_GENERATED_INT ${WHATEVER_GENERATED_INT} "${dir_out}/${WHATEVER_OUTFILE}")
 	endforeach()
 
 	set(WHATEVER_GENERATED ${WHATEVER_GENERATED} ${WHATEVER_GENERATED_INT}
+		PARENT_SCOPE)
+endfunction()
+
+function(we_pythonate_config script args dir_out genfiles)
+	file(MAKE_DIRECTORY ${dir_out})
+
+	foreach(genfile ${genfiles})
+		list(APPEND generated "${dir_out}/${genfile}")
+	endforeach()
+
+	add_custom_command(OUTPUT ${generated}
+		COMMAND ${PYTHON_EXECUTABLE}
+		ARGS ${script} ${args}
+		DEPENDS ${script}
+		COMMENT "[PYTHON] Processing ${script}"
+		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+	set(WHATEVER_GENERATED ${WHATEVER_GENERATED} ${generated}
 		PARENT_SCOPE)
 endfunction()
 
