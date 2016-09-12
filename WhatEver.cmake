@@ -145,6 +145,23 @@ endif()
 set(CMAKE_INSTALL_SYSTEM_RUNTIME_COMPONENT sys)
 include(InstallRequiredSystemLibraries)
 
+function(we_atomic_builtins)
+	set(WHATEVER_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+	check_c_source_compiles("int main()
+	{
+		int rv = 0;
+		__atomic_fetch_add( &rv, 1, __ATOMIC_SEQ_CST );
+		return rv;
+	}" HAVE_BUILTIN_ATOMIC)
+	check_c_source_compiles("int main()
+	{
+		int rv = 0;
+		__sync_fetch_and_add( &rv, 1 );
+		return rv;
+	}" HAVE_BUILTIN_SYNC)
+	set(CMAKE_REQUIRED_FLAGS ${WHATEVER_CMAKE_REQUIRED_FLAGS})
+endfunction()
+
 function(we_generate_exports targets)
 	install(EXPORT ${PROJECT_NAME}
 		FILE "${PROJECT_NAME}Config.cmake"
@@ -160,11 +177,16 @@ function(we_generate_exports targets)
 endfunction()
 
 function(we_check_function header tryit)
-	string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" WHATEVER_VARIABLE ${header})
-	string(TOUPPER "HAVE_${WHATEVER_VARIABLE}" WHATEVER_VARIABLE)
+	if(header)
+		string(REGEX REPLACE "[^a-zA-Z0-9_]" "_" WHATEVER_VARIABLE ${header})
+		string(TOUPPER "HAVE_${WHATEVER_VARIABLE}" WHATEVER_VARIABLE)
 	
-	if(NOT DEFINED ${WHATEVER_VARIABLE})
-		check_include_file("${header}" ${WHATEVER_VARIABLE})
+		if(NOT DEFINED ${WHATEVER_VARIABLE})
+			check_include_file("${header}" ${WHATEVER_VARIABLE})
+		endif()
+	else()
+		set(header ON)
+		set(WHATEVER_VARIABLE header)
 	endif()
 	
 	if(${WHATEVER_VARIABLE})
