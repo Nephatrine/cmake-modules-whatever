@@ -3,10 +3,10 @@
 #
 
 if(NOT DEFINED WHATEVER_PYTHON_VERSION)
-	set(WHATEVER_PYTHON_VERSION 3)
+	set(WHATEVER_PYTHON_VERSION 2.7)
 endif()
 
-find_package(PythonInterp ${WHATEVER_PYTHON_VERSION})
+find_package(PythonInterp ${WHATEVER_PYTHON_VERSION} REQUIRED)
 
 #
 # Internal Scripts

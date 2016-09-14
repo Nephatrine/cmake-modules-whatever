@@ -239,34 +239,6 @@ function(we_request_link_flag ldflag)
 	set(CMAKE_REQUIRED_FLAGS ${WHATEVER_REQUIRED_FLAGS})
 endfunction()
 
-function(we_generate_configs dir_in dir_out)
-	file(MAKE_DIRECTORY ${dir_out})
-	file(GLOB WHATEVER_CONFIG_FILES "${dir_in}/*.in")
-	
-	foreach(WHATEVER_CONFIG_FILE ${WHATEVER_CONFIG_FILES})
-		get_filename_component(WHATEVER_OUTFILE "${WHATEVER_CONFIG_FILE}" NAME)
-		string(REGEX REPLACE "\\.[^.]*$" "" WHATEVER_OUTFILE ${WHATEVER_OUTFILE})
-		configure_file("${WHATEVER_CONFIG_FILE}" "${dir_out}/${WHATEVER_OUTFILE}")
-		set(WHATEVER_GENERATED_INT ${WHATEVER_GENERATED_INT} "${dir_out}/${WHATEVER_OUTFILE}")
-	endforeach()
-
-	file(GLOB WHATEVER_CONFIG_FILES "${dir_in}/*.rl")
-	foreach(WHATEVER_CONFIG_FILE ${WHATEVER_CONFIG_FILES})
-		get_filename_component(WHATEVER_OUTFILE "${WHATEVER_CONFIG_FILE}" NAME)
-		string(REGEX REPLACE "\\.[^.]*$" "" WHATEVER_OUTFILE ${WHATEVER_OUTFILE})
-		add_custom_command(OUTPUT "${dir_out}/${WHATEVER_OUTFILE}"
-			COMMAND ${RAGEL_PROGRAM}
-			ARGS -e -F1 -o"${dir_out}/${WHATEVER_OUTFILE}" ${WHATEVER_CONFIG_FILE}
-			DEPENDS ${WHATEVER_CONFIG_FILE}
-			COMMENT "[RAGEL] Processing ${WHATEVER_CONFIG_FILE}"
-			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-		set(WHATEVER_GENERATED_INT ${WHATEVER_GENERATED_INT} "${dir_out}/${WHATEVER_OUTFILE}")
-	endforeach()
-
-	set(WHATEVER_GENERATED ${WHATEVER_GENERATED} ${WHATEVER_GENERATED_INT}
-		PARENT_SCOPE)
-endfunction()
-
 function(we_build_default WHATEVER_TARGET)
 	set_target_properties(${WHATEVER_TARGET} PROPERTIES
 		C_VISIBILITY_PRESET hidden

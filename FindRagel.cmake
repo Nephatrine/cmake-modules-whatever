@@ -1,0 +1,7 @@
+find_program(RAGEL_EXECUTABLE NAMES ragel)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(Ragel DEFAULT_MSG RAGEL_EXECUTABLE)
+
+mark_as_advanced(RAGEL_EXECUTABLE)
+
